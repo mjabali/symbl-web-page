@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        .output{
+            display: flex;
+            width: 100%; 
+            height: 600px;
+            border-color: white;
+            padding-top: 10px;
+        }
+        .header{
+            display: flex;
+            width: 100%;
+            height: 50px;
+            border-color: white;
+            padding-top: 10px;
+            background: white;
+        }
+        .title{
+            box-sizing: content-box;
+            width: 25%;
+            height: 50px;
+            background: white;
+            scroll-behavior: smooth;
+            border: 5px;
+            border-color: white;
+            font: 1.2em "Fira Sans", sans-serif;
+        }
+        .box {
+            box-sizing: content-box;
+            padding-top: 10px;
+            padding-left: 5px;
+            width: 25%;
+            height: 600px;
+            background: hsl(229, 19%, 84%);
+            scroll-behavior: smooth;
+            border: 5px;
+            border-color: white;
+            overflow: scroll;
+            text-overflow: ellipsis;  
+            font: 1.2em "Fira Sans", sans-serif;
+        }
+        .captions {
+            box-sizing: content-box;
+            padding-top: 30px;
+            padding-left: 5px;
+            width: 100%;
+            height: 100px;
+            background: black;
+            scroll-behavior: smooth;
+            border: 10px;
+            border-color: white;
+            overflow: scroll;
+            text-overflow: ellipsis;
+            color: white;
+            font: 1.2em "Fira Sans", sans-serif;
+        }
+    </style>
+<script>
+// The setup function calls the WebSocket constructor, initiates the connection to the
+// server and sets up all event handlers.
+const setup = () => {
+    closedCaption = document.getElementById("closedCaption");
+    transcripts = document.getElementById("transcripts");
+    topics = document.getElementById("topics");
+    trackers = document.getElementById("trackers");
+    insights = document.getElementById("insights");
+    // See Authentication section for Access Token generation
+    const accessToken = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlFVUTRNemhDUVVWQk1rTkJNemszUTBNMlFVVTRRekkyUmpWQ056VTJRelUxUTBVeE5EZzFNUSJ9.eyJodHRwczovL3BsYXRmb3JtLnN5bWJsLmFpL3VzZXJJZCI6IjU0MDY2MTkxOTUxNDYyNDAiLCJpc3MiOiJodHRwczovL2RpcmVjdC1wbGF0Zm9ybS5hdXRoMC5jb20vIiwic3ViIjoiMjM4dENVak4zS3I4bDJoV21YdGJueTFQdExxRmpjRVNAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vcGxhdGZvcm0ucmFtbWVyLmFpIiwiaWF0IjoxNjM1NDMzMDU4LCJleHAiOjE2MzU1MTk0NTgsImF6cCI6IjIzOHRDVWpOM0tyOGwyaFdtWHRibnkxUHRMcUZqY0VTIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.L5YdvQRkrIjCjESXbN-eK05WFbvWea32b1ZJcBEG7g4tO5OoD2TIYUDaEKbbyHDlpg-WgBDfBtXopECjqqLRo9LptSFcpEn4aZIVPL39klkShzElEjBU0fJSeVYqcVlPOvJm0_NEfuJftt47IOTu7oswLgZczFk9OoPTJi8cNL_22ODXdEjihGBZbKSkAJ3NJbJetYNKPpMjRQnTQ7bVOX5k7vtaVxnfecXkbRAoh5GH-OAt4GSLFu1HyghsnHftN4HJjtH3nggQLJucOfUW_LWYhv8ShBxkoppqv3gqExB7KdX91rha593mtuyr-xz2Uq3oN2hXpVPu5iFre0cAwQ';
+    // Encoded meeting id
+    const uniqueMeetingId = btoa('marcelo@symbl.ai');
+    // Symbl WS endpoint
+    const endpoint = `wss://api.symbl.ai/v1/realtime/insights/${uniqueMeetingId}?access_token=${accessToken}`;
+
+    ws = new WebSocket(endpoint);
+
+    // Listen for the connection open event then call the sendMessage function
+    ws.onopen = (event) => {
+        console.log(`WebSocket Connected`);
+        ws.send(JSON.stringify({
+            type: 'start_request',
+            meetingTitle: 'Getting Started with Symbl.ai',
+            insightTypes: ['question', 'action_item', 'follow_up'], //Enable insight generation
+            trackers: [
+                {
+                    name: "Goodness",
+                    vocabulary: [
+                        "This is awesome",
+                        "I like it",
+                        "I love this"
+                    ]
+                }
+            ],
+            config: {
+                confidenceThreshold: 0.5,
+                languageCode: 'en_US',
+                speechRecognition: {
+                    encoding: 'LINEAR16',
+                    sampleRateHertz: '44100'
+                }
+            },
+            speaker: {
+                userId: 'your@email.com',
+                name: 'You'
+            } 
+        }))
+    };
+    // Listen for the close connection event
+    ws.onclose = (event) => {
+        console.log(`WebSocket Connection Closed`);
+    }
+    // Listen for connection errors
+    ws.onerror = function(evt){
+        console.log("ERROR: " + evt.data);
+    }
+    // Listen for new messages arriving at the client
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        // Grab ConversationId for any extra stuff to be done after the session
+        if(data.type === 'message' && data.message.hasOwnProperty('data')){
+            console.log(`Conversation Id: `, data.message.data.conversationId);
+        }
+        // Display Transcripts
+        if(data.type === 'message_response'){
+            for(let message of data.messages){
+                log(message.payload.content, transcripts);
+            }
+        }
+        // Display Topics
+        if(data.type === 'topic_response'){
+            t = '';
+            for(let topic of data.topics){
+                t = topic.phrases + ", " + t; 
+            }
+            log(t, topics);
+        }
+        // Display Insights
+        if(data.type === 'insight_response'){
+            for(let insight of data.insights){
+                const type = insight.type.replace("_", " ");
+                log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
+            }
+        }
+        // Display Trackers
+        if(data.type === 'tracker_response'){
+            for(let tracker of data.trackers){
+                log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
+            }
+        }
+        // Display Closed Caption
+        if(data.type === 'message' && data.message.hasOwnProperty('punctuated')){
+            log(data.message.punctuated.transcript, closedCaption);
+        }
+        console.log(`Response type: ${data.type}. Object: `, data);
+    };
+}
+// The log function writes to the web page based on the events that are happening
+// and the data passed as an argument to the function
+const log = (info, where) => {
+	//Display information on screen
+	var p = document.createElement("p");
+	p.style.wordWrap = "break-word";
+	p.innerHTML = info;
+    if(where === closedCaption){
+        document.getElementById("closedCaption").innerHTML = "";
+    } else if(where === topics){
+        document.getElementById("topics").innerHTML = "";
+    }
+    where.appendChild(p);    
+    updateScroll(where);
+}
+/*** 
+ * Auto scrolling
+ */
+const updateScroll = (where) => {
+    where.scrollTop = where.scrollHeight;
+}
+/*** 
+ * Audio Stream
+ */
+async function setupAudio() {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
+    handleAudio(stream);
+}
+/** 
+ * Handle the Audio Stream
+ * This callback function fires after the user permission to the browser to access the microphone
+ * Starts the recording session and sends audio stream to the WebSocket connection 
+ * 
+ */ 
+const handleAudio = (stream) => {
+    const AudioContext = window.AudioContext;
+    const context = new AudioContext();
+    const source = context.createMediaStreamSource(stream);
+    const processor = context.createScriptProcessor(/* bufferSize */ 1024, /* numOfInputChannels */ 1, /* numOfOutputChannels */ 1);
+    const gainNode = context.createGain();
+    source.connect(gainNode);
+    gainNode.connect(processor);
+    processor.connect(context.destination);
+    processor.onaudioprocess = (e) => {
+        // convert to 16-bit payload
+        const inputData = e.inputBuffer.getChannelData(0) || new Float32Array(this.bufferSize);
+        const targetBuffer = new Int16Array(inputData.length);
+        for (let index = inputData.length; index > 0; index--) {
+            targetBuffer[index] = 32767 * Math.min(1, inputData[index]);
+        }
+        // Send audio thru WebSocket
+        if(ws.readyState === WebSocket.OPEN){
+            ws.send(targetBuffer.buffer);
+        }
+    }
+}
+
+// The window.addEventListener triggers when the web page is loaded 
+// then call the setup function window.addEventListener("load", setup, false);
+window.addEventListener("load", setup, false);
+
+// Stop the Websocket connection
+const stopConnection = () => {
+    ws.send(JSON.stringify({
+     "type": "stop_request"
+    }));
+}
+</script>
+<body>
+<h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl WebSocket Client</h2>
+<div id="controls">
+    <button type="button" onclick="setupAudio()">Start</button>
+    <button type="button" onclick="stopConnection()">Stop</button>
+</div>
+<div class="header">
+    <div class="title"><h3 align="center">Transcripts</h3></div>
+    <div class="title"><h3 align="center">Trackers</h3></div>
+    <div class="title"><h3 align="center">Insights</h3></div>
+    <div class="title"><h3 align="center">Topics</h3></div>
+</div>
+<!-- The output div is used as a container for all information we want to write to the screen -->
+<div class="output">
+    <div id="transcripts" class="box" style="background: hsl(229, 19%, 84%);"></div>
+    <div id="trackers" class="box" style="background: rgb(135, 151, 223);"></div>
+    <div id="insights" class="box" style="background: hsl(229, 19%, 84%);"></div>
+    <div id="topics" class="box" style="background: rgb(135, 151, 223);"></div></div>
+</div>
+<div>
+    <div id="closedCaption" class="captions">Closed Captions...</div>
+</div>
+</body>
+</html>
