@@ -3,6 +3,8 @@
 ## What is it?
 A simple web app with no dependencies, no frameworks and no packages... pure HTML, JavaScript and CSS, enabling [Symbl.ai](https://symbl.ai/) to capture the audio stream and provide [speech-to-text (closed captions and transcriptions), insights, topics and trackers](https://docs.symbl.ai/docs).
 
+![Demo](./screenshot.png)
+
 ## How to set it up and run it?
 
 1. Update the sample.html file with your [Symbl access token](https://docs.symbl.ai/docs/developer-tools/authentication). 
