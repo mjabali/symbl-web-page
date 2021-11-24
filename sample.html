@@ -23,6 +23,7 @@
             font: 1.2em "Fira Sans", sans-serif;
         }
     </style>
+    <script src="https://storage.googleapis.com/symbl-web-sdk/latest/symbl.min.js"></script>
 <script>
 // The setup function calls the WebSocket constructor, initiates the connection to the
 // server and sets up all event handlers.
@@ -32,22 +33,25 @@ const setup = () => {
     topics = document.getElementById("topics");
     trackers = document.getElementById("trackers");
     insights = document.getElementById("insights");
-    // See Authentication section for Access Token generation
-    const accessToken = '<token>';
-    // Encoded meeting id
-    const uniqueMeetingId = btoa('you@email.ai');
-    // Symbl WS endpoint
-    const endpoint = `wss://api.symbl.ai/v1/realtime/insights/${uniqueMeetingId}?access_token=${accessToken}`;
 
-    ws = new WebSocket(endpoint);
+    symbl.init({
+        //appId: '<your App ID>',
+        //appSecret: '<your App Secret>',
+	    accessToken: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlFVUTRNemhDUVVWQk1rTkJNemszUTBNMlFVVTRRekkyUmpWQ056VTJRelUxUTBVeE5EZzFNUSJ9.eyJodHRwczovL3BsYXRmb3JtLnN5bWJsLmFpL3VzZXJJZCI6IjU0MDY2MTkxOTUxNDYyNDAiLCJpc3MiOiJodHRwczovL2RpcmVjdC1wbGF0Zm9ybS5hdXRoMC5jb20vIiwic3ViIjoiMjM4dENVak4zS3I4bDJoV21YdGJueTFQdExxRmpjRVNAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vcGxhdGZvcm0ucmFtbWVyLmFpIiwiaWF0IjoxNjM3NzkzMjA2LCJleHAiOjE2Mzc4Nzk2MDYsImF6cCI6IjIzOHRDVWpOM0tyOGwyaFdtWHRibnkxUHRMcUZqY0VTIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.F4FLua8nXV5FBtBhuLagOjrvOERvtuc6oRpo2VjeR0eNoLhx3KhfxdhyRvXqABMl-rtyHUTG7dYkU4BLQu6IUCMpOqNtc3R548r5mKjLod9BbmQ2aJqfOdAZdKOo6KwcrY4gbomlvk4uozeqBT61-QGmh30akJqxPtKs3J9NAxW0y8kogAC6SbpTsAstwzu-anJjCj7FjnIyGuscTWjgfoHH_CSHM1rfJURJ1F9ZQ6GU0cmX1X37I3PP774pPPKC6hDv7JUxbHJ3n4V0L2Vppyu6a8092cFmwnZ2U4y1vA7_NnAmmwPy6U-vOIgP7R7pj9uhX5WttdDmiudfYXJOSg', // can be used instead of appId and appSecret
+	    // basePath: '<your custom base path (optional)>',
+    });
+    
+    const id = btoa("symbl-ai-is-the-best");
 
-    // Listen for the connection open event then call the sendMessage function
-    ws.onopen = (event) => {
-        console.log(`WebSocket Connected`);
-        ws.send(JSON.stringify({
-            type: 'start_request',
-            meetingTitle: 'Getting Started with Symbl.ai',
-            insightTypes: ['question', 'action_item', 'follow_up'], //Enable insight generation
+    const connectionConfig = {
+        id,
+        insightTypes: ['action_item', 'question'],
+        config: {
+            meetingTitle: 'My Test Meeting ' + id,
+            confidenceThreshold: 0.7,
+            timezoneOffset: 480, // Offset in minutes from UTC
+            languageCode: 'en-US',
+            sampleRateHertz: new AudioContext().sampleRate,
             trackers: [
                 {
                     name: "Goodness",
@@ -57,69 +61,107 @@ const setup = () => {
                         "I love this"
                     ]
                 }
-            ],
-            config: {
-                confidenceThreshold: 0.5,
-                languageCode: 'en_US',
-                speechRecognition: {
-                    encoding: 'LINEAR16',
-                    sampleRateHertz: '44100'
+            ]
+        },
+        speaker: {
+            // Optional, if not specified, will simply not send an email in the end.
+            userId: 'marcelo@symbl.ai', // Update with valid email
+            name: 'Marcelo'
+        },
+        handlers: {
+            /**
+            * This will return live speech-to-text transcription of the call.
+            */
+            onSpeechDetected: (data) => {
+            if (data) {
+                const {punctuated} = data
+                console.log('Live: ', punctuated && punctuated.transcript)
+                log(punctuated.transcript, closedCaption);
+            }
+            // console.log('onSpeechDetected ', JSON.stringify(data, null, 2));
+            },
+            /**
+            * When processed messages are available, this callback will be called.
+            */
+            onMessageResponse: (data) => {
+                console.log('onMessageResponse', JSON.stringify(data, null, 2))
+                for(let message of data){
+                    log(message.payload.content, transcripts);
                 }
             },
-            speaker: {
-                userId: 'your@email.com',
-                name: 'You'
-            } 
-        }))
+            /**
+            * When Symbl detects an insight, this callback will be called.
+            */
+            onInsightResponse: (data) => {
+            // console.log('onInsightResponse', JSON.stringify(data, null, 2))
+                for(let insight of data){
+                    const type = insight.type.replace("_", " ");
+                    log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
+                }
+            },
+            /**
+            * When Symbl detects a topic, this callback will be called.
+            */
+            onTopicResponse: (data) => {
+            // console.log('onTopicResponse', JSON.stringify(data, null, 2))
+                t = '';
+                for(let topic of data){
+                    t = topic.phrases + ", " + t; 
+                }
+                log(t, topics);
+            },
+            onDataReceived: (data) => {
+                console.log('onDataReceived', JSON.stringify(data, null, 2))
+            },
+            onTrackerResponse: (data) => {
+                // When a tracker is detected in real-time
+                console.log('onTrackerResponse', JSON.stringify(data, null, 2));
+                for(let tracker of data){
+                    log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
+                }
+                if (!!data) {
+                    data.forEach((tracker) => {
+                        console.log(`Detected Tracker Name: ${tracker.name}`);
+                        console.log(`Detected Matches`);
+                        tracker.matches.forEach((match) => {
+                            console.log(`Tracker Value: ${match.value}`);
+                            console.log(`Messages detected against this Tracker`);
+                            match.messageRefs.forEach((messageRef) => {
+                                console.log(`Message ID: ${messageRef.id}`);
+                                console.log(`Message text for which the match was detected: ${messageRef.text}`);
+                                console.log(`\n`);
+                            });
+                            console.log(`\n\n`);
+                            
+                            console.log(`Insights detected against this Tracker`);
+                            match.messageRefs.forEach((insightRef) => {
+                                console.log(`Insight ID: ${insightRef.id}`);
+                                console.log(`Insight text for which the match was detected: ${insightRef.text}`);
+                                console.log(`Insight Type: ${insightRef.type}`);
+                                console.log(`\n`);
+                            });
+                            console.log(`\n\n`);
+                        });
+                    });
+                }
+            }
+        }
     };
-    // Listen for the close connection event
-    ws.onclose = (event) => {
-        console.log(`WebSocket Connection Closed`);
-    }
-    // Listen for connection errors
-    ws.onerror = function(evt){
-        console.log("ERROR: " + evt.data);
-    }
-    // Listen for new messages arriving at the client
-    ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        // Grab ConversationId for any extra stuff to be done after the session
-        if(data.type === 'message' && data.message.hasOwnProperty('data')){
-            console.log(`Conversation Id: `, data.message.data.conversationId);
-        }
-        // Display Transcripts
-        if(data.type === 'message_response'){
-            for(let message of data.messages){
-                log(message.payload.content, transcripts);
-            }
-        }
-        // Display Topics
-        if(data.type === 'topic_response'){
-            t = '';
-            for(let topic of data.topics){
-                t = topic.phrases + ", " + t; 
-            }
-            log(t, topics);
-        }
-        // Display Insights
-        if(data.type === 'insight_response'){
-            for(let insight of data.insights){
-                const type = insight.type.replace("_", " ");
-                log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
-            }
-        }
-        // Display Trackers
+
+    (async () => {
+        const connection = await symbl.startRealtimeRequest(connectionConfig, true);
+    })();
+
+    // Display Trackers
+        //TO DO
+        /*
         if(data.type === 'tracker_response'){
+            console.log(data.trackers);
             for(let tracker of data.trackers){
                 log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
             }
         }
-        // Display Closed Caption
-        if(data.type === 'message' && data.message.hasOwnProperty('punctuated')){
-            log(data.message.punctuated.transcript, closedCaption);
-        }
-        console.log(`Response type: ${data.type}. Object: `, data);
-    };
+        */
 }
 // The log function writes to the web page based on the events that are happening
 // and the data passed as an argument to the function
@@ -142,57 +184,21 @@ const log = (info, where) => {
 const updateScroll = (where) => {
     where.scrollTop = where.scrollHeight;
 }
-/*** 
- * Audio Stream
- */
-async function setupAudio() {
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
-    handleAudio(stream);
-}
-/** 
- * Handle the Audio Stream
- * This callback function fires after the user permission to the browser to access the microphone
- * Starts the recording session and sends audio stream to the WebSocket connection 
- * 
- */ 
-const handleAudio = (stream) => {
-    const AudioContext = window.AudioContext;
-    const context = new AudioContext();
-    const source = context.createMediaStreamSource(stream);
-    const processor = context.createScriptProcessor(/* bufferSize */ 1024, /* numOfInputChannels */ 1, /* numOfOutputChannels */ 1);
-    const gainNode = context.createGain();
-    source.connect(gainNode);
-    gainNode.connect(processor);
-    processor.connect(context.destination);
-    processor.onaudioprocess = (e) => {
-        // convert to 16-bit payload
-        const inputData = e.inputBuffer.getChannelData(0) || new Float32Array(this.bufferSize);
-        const targetBuffer = new Int16Array(inputData.length);
-        for (let index = inputData.length; index > 0; index--) {
-            targetBuffer[index] = 32767 * Math.min(1, inputData[index]);
-        }
-        // Send audio thru WebSocket
-        if(ws.readyState === WebSocket.OPEN){
-            ws.send(targetBuffer.buffer);
-        }
-    }
-}
 
 // The window.addEventListener triggers when the web page is loaded 
 // then call the setup function window.addEventListener("load", setup, false);
-window.addEventListener("load", setup, false);
+//window.addEventListener("load", setup, false);
 
 // Stop the Websocket connection
 const stopConnection = () => {
-    ws.send(JSON.stringify({
-     "type": "stop_request"
-    }));
+    symbl.stopRequest();
 }
 </script>
 <body>
-<h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl WebSocket Client</h2>
+<h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl Web SDK Client</h2>
 <div id="controls">
-    <button type="button" onclick="setupAudio()">Start</button>
+    <!-- <button type="button" onclick="setupAudio()">Start</button> -->
+    <button type="button" onclick="setup()">Start</button>
     <button type="button" onclick="stopConnection()">Stop</button>
 </div>
 <div class="output" style="height: 50px;">
