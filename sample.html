@@ -27,6 +27,7 @@
 <script>
 // The setup function calls the WebSocket constructor, initiates the connection to the
 // server and sets up all event handlers.
+let connection = null;
 const setup = () => {
     closedCaption = document.getElementById("closedCaption");
     transcripts = document.getElementById("transcripts");
@@ -124,7 +125,9 @@ const setup = () => {
     };
 
     (async () => {
-        const connection = await symbl.startRealtimeRequest(connectionConfig, true);
+        connection = await symbl.startRealtimeRequest(connectionConfig, true);
+        document.getElementById('startButton').disabled = true;
+        document.getElementById('stopButton').disabled = false;
     })();
 }
 // The log function writes to the web page based on the events that are happening
@@ -155,15 +158,18 @@ const updateScroll = (where) => {
 
 // Stop the Websocket connection
 const stopConnection = () => {
-    symbl.stopRequest();
+    symbl.stopRequest(connection);
+    console.log('Connection to Symbl closed.');
+    document.getElementById('startButton').disabled = false;
+    document.getElementById('stopButton').disabled = true;
 }
 </script>
 <body>
 <h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl Web SDK Client</h2>
 <div id="controls">
     <!-- <button type="button" onclick="setupAudio()">Start</button> -->
-    <button type="button" onclick="setup()">Start</button>
-    <button type="button" onclick="stopConnection()">Stop</button>
+    <button type="button" id="startButton" onclick="setup()">Start</button>
+    <button type="button" id="stopButton" onclick="stopConnection()">Stop</button>
 </div>
 <div class="output" style="height: 50px;">
     <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Transcripts</h3></div>
