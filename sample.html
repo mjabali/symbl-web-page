@@ -38,7 +38,7 @@ const setup = () => {
     symbl.init({
         //appId: '<your App ID>',
         //appSecret: '<your App Secret>',
-        accessToken: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlFVUTRNemhDUVVWQk1rTkJNemszUTBNMlFVVTRRekkyUmpWQ056VTJRelUxUTBVeE5EZzFNUSJ9.eyJodHRwczovL3BsYXRmb3JtLnN5bWJsLmFpL3VzZXJJZCI6IjU0MDY2MTkxOTUxNDYyNDAiLCJpc3MiOiJodHRwczovL2RpcmVjdC1wbGF0Zm9ybS5hdXRoMC5jb20vIiwic3ViIjoiMjM4dENVak4zS3I4bDJoV21YdGJueTFQdExxRmpjRVNAY2xpZW50cyIsImF1ZCI6Imh0dHBzOi8vcGxhdGZvcm0ucmFtbWVyLmFpIiwiaWF0IjoxNjM3NzkzMjA2LCJleHAiOjE2Mzc4Nzk2MDYsImF6cCI6IjIzOHRDVWpOM0tyOGwyaFdtWHRibnkxUHRMcUZqY0VTIiwiZ3R5IjoiY2xpZW50LWNyZWRlbnRpYWxzIn0.F4FLua8nXV5FBtBhuLagOjrvOERvtuc6oRpo2VjeR0eNoLhx3KhfxdhyRvXqABMl-rtyHUTG7dYkU4BLQu6IUCMpOqNtc3R548r5mKjLod9BbmQ2aJqfOdAZdKOo6KwcrY4gbomlvk4uozeqBT61-QGmh30akJqxPtKs3J9NAxW0y8kogAC6SbpTsAstwzu-anJjCj7FjnIyGuscTWjgfoHH_CSHM1rfJURJ1F9ZQ6GU0cmX1X37I3PP774pPPKC6hDv7JUxbHJ3n4V0L2Vppyu6a8092cFmwnZ2U4y1vA7_NnAmmwPy6U-vOIgP7R7pj9uhX5WttdDmiudfYXJOSg', // can be used instead of appId and appSecret
+        accessToken: '', // can be used instead of appId and appSecret
         // basePath: '<your custom base path (optional)>',
     });
     
@@ -66,8 +66,8 @@ const setup = () => {
         },
         speaker: {
             // Optional, if not specified, will simply not send an email in the end.
-            userId: 'marcelo@symbl.ai', // Update with valid email
-            name: 'Marcelo'
+            userId: '', // Update with valid email
+            name: ''
         },
         handlers: {
             /**
@@ -151,10 +151,6 @@ const log = (info, where) => {
 const updateScroll = (where) => {
     where.scrollTop = where.scrollHeight;
 }
-
-// The window.addEventListener triggers when the web page is loaded 
-// then call the setup function window.addEventListener("load", setup, false);
-//window.addEventListener("load", setup, false);
 
 // Stop the Websocket connection
 const stopConnection = () => {
