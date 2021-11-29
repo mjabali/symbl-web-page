@@ -51,7 +51,8 @@
                 timezoneOffset: 480, // Offset in minutes from UTC
                 languageCode: 'en-US',
                 sampleRateHertz: new AudioContext().sampleRate,
-                trackers: [
+            },
+            trackers: [
                     {
                         name: "Goodness",
                         vocabulary: [
@@ -60,12 +61,11 @@
                             "I love this"
                         ]
                     }
-                ]
-            },
+            ],
             speaker: {
                 // Optional, if not specified, will simply not send an email in the end.
                 userId: '', // Update with valid email
-                name: ''
+                name: '' // Update with your name
             },
             handlers: {
                 /**
@@ -114,8 +114,8 @@
                 },
                 onTrackerResponse: (data) => {
                     // When a tracker is detected in real-time
-                    console.log('onTrackerResponse', JSON.stringify(data, null, 2));
-                    for(let tracker of data){
+                    //console.log('onTrackerResponse', JSON.stringify(data, null, 2));
+                    for(let tracker of data.trackers){
                         log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
                     }
                 }
