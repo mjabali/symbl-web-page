@@ -1,7 +1,7 @@
-# Simple Symbl Web Client Application
+# Simple Symbl Web SDK Client Application
 
 ## What is it?
-A simple web app with no dependencies, no frameworks and no packages... pure HTML, JavaScript and CSS, enabling [Symbl.ai](https://symbl.ai/) to capture the audio stream and provide [speech-to-text (closed captions and transcriptions), insights, topics and trackers](https://docs.symbl.ai/docs).
+A simple web app with a single [Symbl Web SDK dependency](https://www.npmjs.com/package/@symblai/symbl-web-sdk), no frameworks and no packages... pure HTML, JavaScript and CSS, enabling [Symbl.ai](https://symbl.ai/) to capture the audio stream and provide [speech-to-text (closed captions and transcriptions), insights, topics and trackers](https://docs.symbl.ai/docs).
 
 ![Demo](./screenshot.png)
 
