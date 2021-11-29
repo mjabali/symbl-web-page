@@ -24,164 +24,162 @@
         }
     </style>
     <script src="https://storage.googleapis.com/symbl-web-sdk/latest/symbl.min.js"></script>
-<script>
-// The setup function calls the WebSocket constructor, initiates the connection to the
-// server and sets up all event handlers.
-let connection = null;
-const setup = () => {
-    closedCaption = document.getElementById("closedCaption");
-    transcripts = document.getElementById("transcripts");
-    topics = document.getElementById("topics");
-    trackers = document.getElementById("trackers");
-    insights = document.getElementById("insights");
+    <script>
+    // The setup function sets up the Symbl access token, configures and initializes the Symbl connection and sets up all event handlers.
+    let connection = null;
+    const setup = () => {
+        closedCaption = document.getElementById("closedCaption");
+        transcripts = document.getElementById("transcripts");
+        topics = document.getElementById("topics");
+        trackers = document.getElementById("trackers");
+        insights = document.getElementById("insights");
 
-    symbl.init({
-        //appId: '<your App ID>',
-        //appSecret: '<your App Secret>',
-        accessToken: '', // can be used instead of appId and appSecret
-        // basePath: '<your custom base path (optional)>',
-    });
+        symbl.init({
+            //appId: '<your App ID>',
+            //appSecret: '<your App Secret>',
+            accessToken: '', // can be used instead of appId and appSecret
+            // basePath: '<your custom base path (optional)>',
+        });
     
-    const id = btoa("symbl-ai-is-the-best");
-
-    const connectionConfig = {
-        id,
-        insightTypes: ['action_item', 'question'],
-        config: {
-            meetingTitle: 'My Test Meeting ' + id,
-            confidenceThreshold: 0.7,
-            timezoneOffset: 480, // Offset in minutes from UTC
-            languageCode: 'en-US',
-            sampleRateHertz: new AudioContext().sampleRate,
-            trackers: [
-                {
-                    name: "Goodness",
-                    vocabulary: [
-                        "This is awesome",
-                        "I like it",
-                        "I love this"
-                    ]
+        const id = btoa("symbl-ai-is-the-best");
+        const connectionConfig = {
+            id,
+            insightTypes: ['action_item', 'question'],
+            config: {
+                meetingTitle: 'My Test Meeting ' + id,
+                confidenceThreshold: 0.7,
+                timezoneOffset: 480, // Offset in minutes from UTC
+                languageCode: 'en-US',
+                sampleRateHertz: new AudioContext().sampleRate,
+                trackers: [
+                    {
+                        name: "Goodness",
+                        vocabulary: [
+                            "This is awesome",
+                            "I like it",
+                            "I love this"
+                        ]
+                    }
+                ]
+            },
+            speaker: {
+                // Optional, if not specified, will simply not send an email in the end.
+                userId: '', // Update with valid email
+                name: ''
+            },
+            handlers: {
+                /**
+                * This will return live speech-to-text transcription of the call.
+                */
+                onSpeechDetected: (data) => {
+                if (data) {
+                    const {punctuated} = data
+                    console.log('Live: ', punctuated && punctuated.transcript)
+                    log(punctuated.transcript, closedCaption);
                 }
-            ]
-        },
-        speaker: {
-            // Optional, if not specified, will simply not send an email in the end.
-            userId: '', // Update with valid email
-            name: ''
-        },
-        handlers: {
-            /**
-            * This will return live speech-to-text transcription of the call.
-            */
-            onSpeechDetected: (data) => {
-            if (data) {
-                const {punctuated} = data
-                console.log('Live: ', punctuated && punctuated.transcript)
-                log(punctuated.transcript, closedCaption);
+                // console.log('onSpeechDetected ', JSON.stringify(data, null, 2));
+                },
+                /**
+                * When processed messages are available, this callback will be called.
+                */
+                onMessageResponse: (data) => {
+                    console.log('onMessageResponse', JSON.stringify(data, null, 2))
+                    for(let message of data){
+                        log(message.payload.content, transcripts);
+                    }
+                },
+                /**
+                * When Symbl detects an insight, this callback will be called.
+                */
+                onInsightResponse: (data) => {
+                // console.log('onInsightResponse', JSON.stringify(data, null, 2))
+                    for(let insight of data){
+                        const type = insight.type.replace("_", " ");
+                        log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
+                    }
+                },
+                /**
+                * When Symbl detects a topic, this callback will be called.
+                */
+                onTopicResponse: (data) => {
+                // console.log('onTopicResponse', JSON.stringify(data, null, 2))
+                    t = '';
+                    for(let topic of data){
+                        t = topic.phrases + ", " + t; 
+                    }
+                    log(t, topics);
+                },
+                onDataReceived: (data) => {
+                // console.log('onDataReceived', JSON.stringify(data, null, 2))
+                },
+                onTrackerResponse: (data) => {
+                    // When a tracker is detected in real-time
+                    console.log('onTrackerResponse', JSON.stringify(data, null, 2));
+                    for(let tracker of data){
+                        log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
+                    }
+                }
             }
-            // console.log('onSpeechDetected ', JSON.stringify(data, null, 2));
-            },
-            /**
-            * When processed messages are available, this callback will be called.
-            */
-            onMessageResponse: (data) => {
-                console.log('onMessageResponse', JSON.stringify(data, null, 2))
-                for(let message of data){
-                    log(message.payload.content, transcripts);
-                }
-            },
-            /**
-            * When Symbl detects an insight, this callback will be called.
-            */
-            onInsightResponse: (data) => {
-            // console.log('onInsightResponse', JSON.stringify(data, null, 2))
-                for(let insight of data){
-                    const type = insight.type.replace("_", " ");
-                    log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
-                }
-            },
-            /**
-            * When Symbl detects a topic, this callback will be called.
-            */
-            onTopicResponse: (data) => {
-            // console.log('onTopicResponse', JSON.stringify(data, null, 2))
-                t = '';
-                for(let topic of data){
-                    t = topic.phrases + ", " + t; 
-                }
-                log(t, topics);
-            },
-            onDataReceived: (data) => {
-            // console.log('onDataReceived', JSON.stringify(data, null, 2))
-            },
-            onTrackerResponse: (data) => {
-                // When a tracker is detected in real-time
-                console.log('onTrackerResponse', JSON.stringify(data, null, 2));
-                for(let tracker of data){
-                    log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
-                }
-            }
-        }
-    };
+        };
 
-    (async () => {
-        connection = await symbl.startRealtimeRequest(connectionConfig, true);
-        document.getElementById('startButton').disabled = true;
-        document.getElementById('stopButton').disabled = false;
-    })();
-}
-// The log function writes to the web page based on the events that are happening
-// and the data passed as an argument to the function
-const log = (info, where) => {
-	//Display information on screen
-	var p = document.createElement("p");
-	p.style.wordWrap = "break-word";
-	p.innerHTML = info;
-    if(where === closedCaption){
-        document.getElementById("closedCaption").innerHTML = "";
-    } else if(where === topics){
-        document.getElementById("topics").innerHTML = "";
+        (async () => {
+            connection = await symbl.startRealtimeRequest(connectionConfig, true);
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+        })();
     }
-    where.appendChild(p);    
-    updateScroll(where);
-}
-/*** 
- * Auto scrolling
- */
-const updateScroll = (where) => {
-    where.scrollTop = where.scrollHeight;
-}
+    // The log function writes to the web page based on the events that are happening
+    // and the data passed as an argument to the function
+    const log = (info, where) => {
+        //Display information on screen
+        var p = document.createElement("p");
+        p.style.wordWrap = "break-word";
+        p.innerHTML = info;
+        if(where === closedCaption){
+            document.getElementById("closedCaption").innerHTML = "";
+        } else if(where === topics){
+            document.getElementById("topics").innerHTML = "";
+        }
+        where.appendChild(p);    
+        updateScroll(where);
+    }
+    /*** 
+     * Auto scrolling
+     */
+    const updateScroll = (where) => {
+        where.scrollTop = where.scrollHeight;
+    }
 
-// Stop the Websocket connection
-const stopConnection = () => {
-    symbl.stopRequest(connection);
-    console.log('Connection to Symbl closed.');
-    document.getElementById('startButton').disabled = false;
-    document.getElementById('stopButton').disabled = true;
-}
-</script>
-<body>
-<h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl Web SDK Client</h2>
-<div id="controls">
-    <!-- <button type="button" onclick="setupAudio()">Start</button> -->
-    <button type="button" id="startButton" onclick="setup()">Start</button>
-    <button type="button" id="stopButton" onclick="stopConnection()">Stop</button>
-</div>
-<div class="output" style="height: 50px;">
-    <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Transcripts</h3></div>
-    <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Trackers</h3></div>
-    <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Insights</h3></div>
-    <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Topics</h3></div>
-</div>
-<!-- The output div is used as a container for all information we want to write to the screen -->
-<div class="output">
-    <div id="transcripts" class="box" style="background: hsl(229, 19%, 84%);"></div>
-    <div id="trackers" class="box" style="background: rgb(135, 151, 223);"></div>
-    <div id="insights" class="box" style="background: hsl(229, 19%, 84%);"></div>
-    <div id="topics" class="box" style="background: rgb(135, 151, 223);"></div></div>
-</div>
-<div>
-    <div id="closedCaption" class="box" style="padding-top: 30px;width: 100%;height: 100px;background: black;color: white;">Closed Captions...</div>
-</div>
-</body>
+    // Stop the Websocket connection
+    const stopConnection = () => {
+        symbl.stopRequest(connection);
+        console.log('Connection to Symbl closed.');
+        document.getElementById('startButton').disabled = false;
+        document.getElementById('stopButton').disabled = true;
+    }
+    </script>
+    <body>
+        <h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl Web SDK Client</h2>
+        <div id="controls">
+            <!-- <button type="button" onclick="setupAudio()">Start</button> -->
+            <button type="button" id="startButton" onclick="setup()">Start</button>
+            <button type="button" id="stopButton" onclick="stopConnection()">Stop</button>
+        </div>
+        <div class="output" style="height: 50px;">
+            <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Transcripts</h3></div>
+            <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Trackers</h3></div>
+            <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Insights</h3></div>
+            <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Topics</h3></div>
+        </div>
+        <!-- The output div is used as a container for all information we want to write to the screen -->
+        <div class="output">
+            <div id="transcripts" class="box" style="background: hsl(229, 19%, 84%);"></div>
+            <div id="trackers" class="box" style="background: rgb(135, 151, 223);"></div>
+            <div id="insights" class="box" style="background: hsl(229, 19%, 84%);"></div>
+            <div id="topics" class="box" style="background: rgb(135, 151, 223);"></div></div>
+        </div>
+        <div>
+            <div id="closedCaption" class="box" style="padding-top: 30px;width: 100%;height: 100px;background: black;color: white;">Closed Captions...</div>
+        </div>
+    </body>
 </html>
