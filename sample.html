@@ -112,7 +112,6 @@
                     // console.log('onDataReceived', JSON.stringify(data, null, 2))
                 },
                 onTrackerResponse: (data) => {
-                    // When a tracker is detected in real-time
                     //console.log('onTrackerResponse', JSON.stringify(data, null, 2));
                     for(let tracker of data.trackers){
                         log(tracker.name + ': ' + tracker.matches[0].messageRefs[0].text, trackers);
@@ -120,9 +119,9 @@
                 }
             }
         };
-
         (async () => {
             connection = await symbl.startRealtimeRequest(connectionConfig, true);
+            console.log("Connection to Symbl started...");
             document.getElementById('startButton').disabled = true;
             document.getElementById('stopButton').disabled = false;
         })();
@@ -141,17 +140,14 @@
         where.appendChild(p);    
         updateScroll(where);
     }
-    /*** 
-     * Auto scrolling
-     */
+    // Auto scrolling
     const updateScroll = (where) => {
         where.scrollTop = where.scrollHeight;
     }
-
     // Stop the Websocket connection
     const stopConnection = () => {
         symbl.stopRequest(connection);
-        console.log('Connection to Symbl closed.');
+        console.log('Connection to Symbl stopped.');
         document.getElementById('startButton').disabled = false;
         document.getElementById('stopButton').disabled = true;
     }
