@@ -37,11 +37,11 @@
         symbl.init({
             //appId: '<your App ID>',
             //appSecret: '<your App Secret>',
-            accessToken: '', // can be used instead of appId and appSecret
-            // basePath: '<your custom base path (optional)>',
+            accessToken: '<your access token>', // can be used instead of appId and appSecret
+            //basePath: '<optional custom base path i.e. https://api-labs.symbl.ai>'
         });
     
-        const id = btoa("symbl-ai-is-the-best");
+        const id = btoa('your-awesome-app-user-id');
         const connectionConfig = {
             id,
             insightTypes: ['action_item', 'question'],
@@ -53,17 +53,16 @@
                 sampleRateHertz: new AudioContext().sampleRate,
             },
             trackers: [
-                    {
-                        name: "Goodness",
-                        vocabulary: [
-                            "This is awesome",
-                            "I like it",
-                            "I love this"
-                        ]
-                    }
+                {
+                    name: "Goodness",
+                    vocabulary: [
+                        "This is awesome",
+                        "I like it",
+                        "I love this"
+                    ]    
+                }
             ],
             speaker: {
-                // Optional, if not specified, will simply not send an email in the end.
                 userId: '', // Update with valid email
                 name: '' // Update with your name
             },
@@ -72,12 +71,12 @@
                 * This will return live speech-to-text transcription of the call.
                 */
                 onSpeechDetected: (data) => {
-                if (data) {
-                    const {punctuated} = data
-                    console.log('Live: ', punctuated && punctuated.transcript)
-                    log(punctuated.transcript, closedCaption);
-                }
-                // console.log('onSpeechDetected ', JSON.stringify(data, null, 2));
+                    // console.log('onSpeechDetected ', JSON.stringify(data, null, 2));
+                    if (data) {
+                        const {punctuated} = data
+                        console.log('Live: ', punctuated && punctuated.transcript)
+                        log(punctuated.transcript, closedCaption);
+                    }
                 },
                 /**
                 * When processed messages are available, this callback will be called.
@@ -92,7 +91,7 @@
                 * When Symbl detects an insight, this callback will be called.
                 */
                 onInsightResponse: (data) => {
-                // console.log('onInsightResponse', JSON.stringify(data, null, 2))
+                    // console.log('onInsightResponse', JSON.stringify(data, null, 2))
                     for(let insight of data){
                         const type = insight.type.replace("_", " ");
                         log(type.charAt(0).toUpperCase() + type.slice(1) + ": " + insight.payload.content, insights);
@@ -102,7 +101,7 @@
                 * When Symbl detects a topic, this callback will be called.
                 */
                 onTopicResponse: (data) => {
-                // console.log('onTopicResponse', JSON.stringify(data, null, 2))
+                    // console.log('onTopicResponse', JSON.stringify(data, null, 2))
                     t = '';
                     for(let topic of data){
                         t = topic.phrases + ", " + t; 
@@ -110,7 +109,7 @@
                     log(t, topics);
                 },
                 onDataReceived: (data) => {
-                // console.log('onDataReceived', JSON.stringify(data, null, 2))
+                    // console.log('onDataReceived', JSON.stringify(data, null, 2))
                 },
                 onTrackerResponse: (data) => {
                     // When a tracker is detected in real-time
@@ -131,7 +130,6 @@
     // The log function writes to the web page based on the events that are happening
     // and the data passed as an argument to the function
     const log = (info, where) => {
-        //Display information on screen
         var p = document.createElement("p");
         p.style.wordWrap = "break-word";
         p.innerHTML = info;
@@ -161,7 +159,6 @@
     <body>
         <h2 style="font: 1.2em 'Fira Sans', sans-serif;">Simple Symbl Web SDK Client</h2>
         <div id="controls">
-            <!-- <button type="button" onclick="setupAudio()">Start</button> -->
             <button type="button" id="startButton" onclick="setup()">Start</button>
             <button type="button" id="stopButton" onclick="stopConnection()">Stop</button>
         </div>
@@ -171,7 +168,6 @@
             <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Insights</h3></div>
             <div class="box" style="height: 50px;overflow: hidden;"><h3 align="center">Topics</h3></div>
         </div>
-        <!-- The output div is used as a container for all information we want to write to the screen -->
         <div class="output">
             <div id="transcripts" class="box" style="background: hsl(229, 19%, 84%);"></div>
             <div id="trackers" class="box" style="background: rgb(135, 151, 223);"></div>
