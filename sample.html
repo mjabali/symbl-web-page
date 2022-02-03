@@ -41,7 +41,7 @@
             //basePath: '<optional custom base path i.e. https://api-labs.symbl.ai>'
         });
     
-        const id = btoa('your-awesome-app-user-id');
+        const id = Math.random().toString().substr(2, 5);
         const connectionConfig = {
             id,
             insightTypes: ['action_item', 'question'],
